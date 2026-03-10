@@ -51,4 +51,9 @@ class Poll extends Model
     {
         return $this->hasMany(Vote::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 }

@@ -24,4 +24,9 @@ class PollOption extends Model
     {
         return $this->hasMany(Vote::class);
     }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('id');
+    }
 }
