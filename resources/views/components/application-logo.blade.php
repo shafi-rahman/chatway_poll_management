@@ -1,0 +1,1 @@
+<img src="https://files-cdn.chatway.app/assets/images/logo-text.svg" alt="Logo" />
