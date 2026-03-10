@@ -54,4 +54,9 @@ class User extends Authenticatable
             default => 'Unknown',
         };
     }
+
+    public function polls()
+    {
+        return $this->hasMany(Poll::class);
+    }
 }
