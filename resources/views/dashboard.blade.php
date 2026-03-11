@@ -23,6 +23,20 @@
                 </div>
             </div>
 
+            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-100 p-6">
+                <div class="text-sm font-medium text-gray-500">Polls</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900">0</div>
+                <div class="mt-1 text-sm text-gray-600">
+                    Create and manage polls from your admin panel.
+                </div>
+                <div class="mt-4">
+                    <a href="{{ route('admin.polls.index') }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition" >
+                        View Polls
+                    </a>
+                </div>
+            </div>
+
+
         </div>
     </div>
 </x-app-layout>
