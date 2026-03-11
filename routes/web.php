@@ -22,6 +22,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/polls', [PollController::class, 'index'])->name('polls.index');
     Route::get('/polls/create', [PollController::class, 'create'])->name('polls.create');
     Route::post('/polls', [PollController::class, 'store'])->name('polls.store');
+    Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
+    Route::put('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
 });
 
 require __DIR__.'/auth.php';

@@ -27,6 +27,12 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @if ($polls->count() === 0)
                 <div class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
                     <h3 class="text-lg font-semibold text-gray-900">
@@ -69,14 +75,25 @@
                                         <span>{{ $poll->votes_count }} votes</span>
                                         <span>UUID: {{ $poll->uuid }}</span>
                                     </div>
+
+                                    <div class="mt-3 flex flex-col gap-1 text-sm text-gray-500">
+                                        <span>
+                                            Start:
+                                            {{ $poll->starts_at ? $poll->starts_at->format('M d, Y h:i A') : 'Not set' }}
+                                        </span>
+                                        <span>
+                                            End:
+                                            {{ $poll->ends_at ? $poll->ends_at->format('M d, Y h:i A') : 'Not set' }}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div class="flex items-center gap-3">
                                     <a
-                                        href="#"
+                                        href="{{ route('admin.polls.edit', $poll) }}"
                                         class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
                                     >
-                                        View
+                                        Edit
                                     </a>
                                 </div>
                             </div>

@@ -3,10 +3,10 @@
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Create Poll
+                    Edit Poll
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    Create a single-question poll with multiple answer options.
+                    Update your poll question, options, status, and schedule.
                 </p>
             </div>
 
@@ -22,15 +22,16 @@
             <div class="rounded-2xl border border-gray-100 bg-white shadow-sm">
                 <div class="border-b border-gray-100 px-6 py-5">
                     <h3 class="text-lg font-semibold text-gray-900">
-                        Poll Details
+                        Edit Poll Details
                     </h3>
                     <p class="mt-1 text-sm text-gray-500">
-                        Start by writing the question and adding at least two options.
+                        Make changes before the poll starts receiving votes.
                     </p>
                 </div>
 
-                <form method="POST" action="{{ route('admin.polls.store') }}" class="px-6 py-6 space-y-8">
+                <form method="POST" action="{{ route('admin.polls.update', $poll) }}" class="px-6 py-6 space-y-8">
                     @csrf
+                    @method('PUT')
 
                     <div>
                         <label for="question" class="block text-sm font-medium text-gray-700">
@@ -40,7 +41,7 @@
                             id="question"
                             name="question"
                             type="text"
-                            value="{{ old('question') }}"
+                            value="{{ old('question', $poll->question) }}"
                             placeholder="e.g. Which feature should we build next in Chatway?"
                             class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                         >
@@ -59,8 +60,8 @@
                                 name="is_active"
                                 class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                             >
-                                <option value="1" {{ old('is_active', '1') == '1' ? 'selected' : '' }}>Active</option>
-                                <option value="0" {{ old('is_active') == '0' ? 'selected' : '' }}>Inactive</option>
+                                <option value="1" {{ old('is_active', (string) (int) $poll->is_active) == '1' ? 'selected' : '' }}>Active</option>
+                                <option value="0" {{ old('is_active', (string) (int) $poll->is_active) == '0' ? 'selected' : '' }}>Inactive</option>
                             </select>
                         </div>
 
@@ -72,7 +73,7 @@
                                 id="starts_at"
                                 name="starts_at"
                                 type="datetime-local"
-                                value="{{ old('starts_at') }}"
+                                value="{{ old('starts_at', optional($poll->starts_at)->format('Y-m-d\TH:i')) }}"
                                 class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                             >
                             @error('starts_at')
@@ -88,7 +89,7 @@
                                 id="ends_at"
                                 name="ends_at"
                                 type="datetime-local"
-                                value="{{ old('ends_at') }}"
+                                value="{{ old('ends_at', optional($poll->ends_at)->format('Y-m-d\TH:i')) }}"
                                 class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                             >
                             @error('ends_at')
@@ -104,7 +105,7 @@
                                     Poll Options
                                 </label>
                                 <p class="mt-1 text-sm text-gray-500">
-                                    Add at least two answer choices.
+                                    Keep at least two valid options.
                                 </p>
                             </div>
 
@@ -118,7 +119,8 @@
                         </div>
 
                         @php
-                            $oldOptions = old('options', ['', '']);
+                            $existingOptions = $poll->options->pluck('option_text')->toArray();
+                            $oldOptions = old('options', count($existingOptions) ? $existingOptions : ['', '']);
                         @endphp
 
                         <div id="options-wrapper" class="mt-4 space-y-4">
@@ -163,7 +165,7 @@
                         <button
                             type="submit"
                             class="inline-flex items-center rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition">
-                            Save Poll
+                            Update Poll
                         </button>
                     </div>
                 </form>
