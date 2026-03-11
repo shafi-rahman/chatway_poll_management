@@ -17,7 +17,7 @@ class PublicPollController extends Controller
     // show public poll page
     public function show(Request $request, Poll $poll): View
     {
-        $poll->load(['options', 'user']);
+        $poll->load(['options.votes', 'user']);
 
         [$hasStarted, $hasEnded, $isAvailableForVoting] = $this->getPollAvailability($poll);
 
@@ -31,12 +31,17 @@ class PublicPollController extends Controller
             })
             ->exists();
 
+        $resultRows = $poll->resultRows();
+        $totalVotes = $poll->totalVotesCount();
+
         return view('polls.show', [
             'poll' => $poll,
             'hasStarted' => $hasStarted,
             'hasEnded' => $hasEnded,
             'isAvailableForVoting' => $isAvailableForVoting,
             'hasAlreadyVoted' => $hasAlreadyVoted,
+            'resultRows' => $resultRows,
+            'totalVotes' => $totalVotes,
         ]);
     }
 

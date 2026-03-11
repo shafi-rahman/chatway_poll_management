@@ -11,17 +11,11 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a
-                    href="{{ route('admin.polls.show', $poll) }}"
-                    class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                >
+                <a href="{{ route('admin.polls.show', $poll) }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                     Poll Details
                 </a>
 
-                <a
-                    href="{{ route('admin.polls.index') }}"
-                    class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                >
+                <a href="{{ route('admin.polls.index') }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                     Back to Polls
                 </a>
             </div>
@@ -63,17 +57,13 @@
                                             {{ $row['option_text'] }}
                                         </div>
                                         <div class="text-sm text-gray-500">
-                                            <span class="result-vote-count">{{ $row['vote_count'] }}</span> votes
-                                            •
+                                            <span class="result-vote-count">{{ $row['vote_count'] }}</span> votes -
                                             <span class="result-percentage">{{ number_format($row['percentage'], 1) }}</span>%
                                         </div>
                                     </div>
 
                                     <div class="h-3 overflow-hidden rounded-full bg-gray-100">
-                                        <div
-                                            class="result-bar h-full rounded-full bg-gray-900 transition-all duration-300"
-                                            style="width: {{ $row['percentage'] }}%;"
-                                        ></div>
+                                        <div class="result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;" ></div>
                                     </div>
                                 </div>
                             @endforeach
@@ -122,12 +112,7 @@
                         </h3>
 
                         <div class="mt-4">
-                            <input
-                                type="text"
-                                readonly
-                                value="{{ route('polls.show', $poll) }}"
-                                class="block w-full rounded-xl border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                            >
+                            <input type="text" readonly value="{{ route('polls.show', $poll) }}" class="block w-full rounded-xl border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900">
                         </div>
                     </div>
                 </div>

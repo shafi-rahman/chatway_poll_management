@@ -113,6 +113,38 @@
                         </div>
                     </form>
                 </div>
+
+                <div class="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                    <div class="mb-4 flex items-center justify-between gap-4">
+                        <h4 class="text-base font-semibold text-gray-900">
+                            Current Results
+                        </h4>
+                        <span class="text-sm text-gray-500">
+                            Total Votes: <span id="public-results-total-votes">{{ $totalVotes }}</span>
+                        </span>
+                    </div>
+
+                    <div id="public-results-breakdown" class="space-y-4">
+                        @foreach ($resultRows as $row)
+                            <div class="public-result-row" data-option-id="{{ $row['id'] }}">
+                                <div class="mb-2 flex items-center justify-between gap-4">
+                                    <div class="text-sm font-medium text-gray-800">
+                                        {{ $row['option_text'] }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span class="public-result-vote-count">{{ $row['vote_count'] }}</span> votes -
+                                        <span class="public-result-percentage">{{ number_format($row['percentage'], 1) }}</span>%
+                                    </div>
+                                </div>
+
+                                <div class="h-2.5 overflow-hidden rounded-full bg-gray-200">
+                                    <div class="public-result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;" ></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
