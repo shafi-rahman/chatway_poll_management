@@ -10,10 +10,7 @@
                 </p>
             </div>
 
-            <a
-                href="{{ route('admin.polls.create') }}"
-                class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition"
-            >
+            <a href="{{ route('admin.polls.create') }}" class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition">
                 Create Poll
             </a>
         </div>
@@ -43,10 +40,7 @@
                     </p>
 
                     <div class="mt-6">
-                        <a
-                            href="{{ route('admin.polls.create') }}"
-                            class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition"
-                        >
+                        <a href="{{ route('admin.polls.create') }}" class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition">
                             Create Your First Poll
                         </a>
                     </div>

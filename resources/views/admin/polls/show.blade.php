@@ -73,19 +73,9 @@
                         </p>
 
                         <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <input
-                                type="text"
-                                id="public-poll-link"
-                                readonly
-                                value="{{ route('polls.show', $poll) }}"
-                                class="block w-full rounded-xl border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                            >
+                            <input type="text" id="public-poll-link" readonly value="{{ route('polls.show', $poll) }}" class="block w-full rounded-xl border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900" >
 
-                            <button
-                                type="button"
-                                id="copy-poll-link-button"
-                                class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition"
-                            >
+                            <button type="button" id="copy-poll-link-button" class="w-48 inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition">
                                 Copy Link
                             </button>
                         </div>
@@ -151,34 +141,34 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const copyButton = document.getElementById('copy-poll-link-button');
-            const linkInput = document.getElementById('public-poll-link');
-            const feedback = document.getElementById('copy-link-feedback');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const copyButton = document.getElementById('copy-poll-link-button');
+        const linkInput = document.getElementById('public-poll-link');
+        const feedback = document.getElementById('copy-link-feedback');
 
-            if (!copyButton || !linkInput) {
-                return;
+        if (!copyButton || !linkInput) {
+            return;
+        }
+
+        copyButton.addEventListener('click', async function () {
+            try {
+                await navigator.clipboard.writeText(linkInput.value);
+                feedback.classList.remove('hidden');
+
+                setTimeout(() => {
+                    feedback.classList.add('hidden');
+                }, 2000);
+            } catch (error) {
+                linkInput.select();
+                document.execCommand('copy');
+                feedback.classList.remove('hidden');
+
+                setTimeout(() => {
+                    feedback.classList.add('hidden');
+                }, 2000);
             }
-
-            copyButton.addEventListener('click', async function () {
-                try {
-                    await navigator.clipboard.writeText(linkInput.value);
-                    feedback.classList.remove('hidden');
-
-                    setTimeout(() => {
-                        feedback.classList.add('hidden');
-                    }, 2000);
-                } catch (error) {
-                    linkInput.select();
-                    document.execCommand('copy');
-                    feedback.classList.remove('hidden');
-
-                    setTimeout(() => {
-                        feedback.classList.add('hidden');
-                    }, 2000);
-                }
-            });
         });
-    </script>
+    });
+</script>
 </x-app-layout>
