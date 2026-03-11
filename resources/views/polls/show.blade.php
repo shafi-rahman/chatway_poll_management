@@ -14,7 +14,7 @@
 
 <body class="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased">
     <div class="mx-auto flex min-h-screen max-w-4xl items-center px-4 py-10 sm:px-6 lg:px-8">
-        <div class="w-full">
+        <div class="w-full" data-poll-uuid="{{ $poll->uuid }}">
             <div class="mb-6 text-center">
                 <img src="https://files-cdn.chatway.app/assets/images/logo-text.svg" alt="Chatway" class="mx-auto w-48" />
             </div>
@@ -42,13 +42,13 @@
                     </div>
 
                     @if (session('success'))
-                        <div class="mb-6 rounded-2xl border text-center border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
+                        <div class="mb-6 session-message rounded-2xl border text-center border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
                             {{ session('success') }}
                         </div>
                     @endif
 
                     @if (session('error'))
-                        <div class="mb-6 rounded-2xl border text-center border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                        <div class="mb-6 session-message rounded-2xl border text-center border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                             {{ session('error') }}
                         </div>
                     @endif
@@ -138,7 +138,7 @@
                                 </div>
 
                                 <div class="h-2.5 overflow-hidden rounded-full bg-gray-200">
-                                    <div class="public-result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;" ></div>
+                                    <div class="public-result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;"></div>
                                 </div>
                             </div>
                         @endforeach
@@ -148,6 +148,58 @@
             </div>
         </div>
     </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        document.querySelectorAll('.session-message').forEach(function(element) {
+            setTimeout(function() {
+                element.classList.add('opacity-0');
+                setTimeout(function() {
+                    element.remove();
+                }, 500);
+            }, 3000);
+        });
+
+        const container = document.querySelector('[data-poll-uuid]');
+        if (!container || typeof window.Echo === 'undefined') {
+            return;
+        }
+
+        const pollUuid = container.dataset.pollUuid;
+        const totalVotesElement = document.getElementById('public-results-total-votes');
+
+        window.Echo.channel(`poll.${pollUuid}`)
+            .listen('.poll.vote.updated', (event) => {
+                if (totalVotesElement) {
+                    totalVotesElement.textContent = event.total_votes;
+                }
+
+                (event.result_rows || []).forEach((row) => {
+                    const rowElement = document.querySelector(`.public-result-row[data-option-id="${row.id}"]`);
+                    if (!rowElement) {
+                        return;
+                    }
+
+                    const voteCount = rowElement.querySelector('.public-result-vote-count');
+                    const percentage = rowElement.querySelector('.public-result-percentage');
+                    const bar = rowElement.querySelector('.public-result-bar');
+
+                    if (voteCount) {
+                        voteCount.textContent = row.vote_count;
+                    }
+
+                    if (percentage) {
+                        percentage.textContent = Number(row.percentage).toFixed(1);
+                    }
+
+                    if (bar) {
+                        bar.style.width = `${row.percentage}%`;
+                    }
+                });
+            });
+    });
+</script>
 </body>
 
 </html>

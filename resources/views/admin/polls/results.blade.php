@@ -22,7 +22,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-6" data-poll-uuid="{{ $poll->uuid }}">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <div class="grid gap-6 lg:grid-cols-3">
                 <div class="lg:col-span-2 space-y-6">
@@ -63,7 +63,7 @@
                                     </div>
 
                                     <div class="h-3 overflow-hidden rounded-full bg-gray-100">
-                                        <div class="result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;" ></div>
+                                        <div class="result-bar h-full rounded-full bg-gray-900 transition-all duration-300" style="width: {{ $row['percentage'] }}%;"></div>
                                     </div>
                                 </div>
                             @endforeach
@@ -119,4 +119,46 @@
             </div>
         </div>
     </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.querySelector('[data-poll-uuid]');
+        if (!container || typeof window.Echo === 'undefined') {
+            return;
+        }
+
+        const pollUuid = container.dataset.pollUuid;
+        const totalVotesElement = document.getElementById('results-total-votes');
+
+        window.Echo.channel(`poll.${pollUuid}`)
+            .listen('.poll.vote.updated', (event) => {
+                if (totalVotesElement) {
+                    totalVotesElement.textContent = event.total_votes;
+                }
+
+                (event.result_rows || []).forEach((row) => {
+                    const rowElement = document.querySelector(`.result-row[data-option-id="${row.id}"]`);
+                    if (!rowElement) {
+                        return;
+                    }
+
+                    const voteCount = rowElement.querySelector('.result-vote-count');
+                    const percentage = rowElement.querySelector('.result-percentage');
+                    const bar = rowElement.querySelector('.result-bar');
+
+                    if (voteCount) {
+                        voteCount.textContent = row.vote_count;
+                    }
+
+                    if (percentage) {
+                        percentage.textContent = Number(row.percentage).toFixed(1);
+                    }
+
+                    if (bar) {
+                        bar.style.width = `${row.percentage}%`;
+                    }
+                });
+            });
+    });
+</script>
 </x-app-layout>

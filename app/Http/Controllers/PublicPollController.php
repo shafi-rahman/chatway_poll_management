@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
+use App\Events\PollVoteUpdated;
+
 
 class PublicPollController extends Controller
 {
@@ -113,6 +115,13 @@ class PublicPollController extends Controller
                 ->route('polls.show', $poll)
                 ->with('error', 'You have already voted on this poll.');
         }
+
+        $poll->load(['options.votes']);
+        broadcast(new PollVoteUpdated(
+            $poll,
+            $poll->resultRows()->values()->all(),
+            $poll->totalVotesCount()
+        ));
 
         return redirect()
             ->route('polls.show', $poll)
