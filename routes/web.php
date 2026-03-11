@@ -28,4 +28,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
 });
 
+Route::get('/polls/{poll}', [PublicPollController::class, 'show'])->name('polls.show');
+
 require __DIR__.'/auth.php';
