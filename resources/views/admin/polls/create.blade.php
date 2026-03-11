@@ -47,7 +47,9 @@
                             class="mt-2 block w-full rounded-xl border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                         >
                         @error('question')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-600" data-error="question">
+                                {{ $message }}
+                            </p>
                         @enderror
                         <p class="mt-2 text-sm text-gray-500">
                             Keep it short and clear so voters can respond quickly.
@@ -107,11 +109,9 @@
                         </div>
 
                         @error('options')
-                            <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-
-                        @error('options.*')
-                            <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-600" data-error="options">
+                                {{ $message }}
+                            </p>
                         @enderror
                     </div>
 
@@ -137,8 +137,23 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
             const optionsWrapper = document.getElementById('options-wrapper');
             const addOptionButton = document.getElementById('add-option-button');
+            const questionInput = document.getElementById('question');
+
+            if (questionInput) {
+                questionInput.addEventListener('input', function () {
+                    const error = document.querySelector('[data-error="question"]');
+                    if (error) error.remove();
+                });
+            }
+            document.addEventListener('input', function (e) {
+                if (e.target.name === 'options[]') {
+                    const optionError = document.querySelector('[data-error="options"]');
+                    if (optionError) optionError.remove();
+                }
+            });
 
             function updateOptionLabels() {
                 const optionItems = optionsWrapper.querySelectorAll('.option-item');
