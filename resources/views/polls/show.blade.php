@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +11,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased">
     <div class="mx-auto flex min-h-screen max-w-4xl items-center px-4 py-10 sm:px-6 lg:px-8">
         <div class="w-full">
@@ -19,12 +21,12 @@
 
             <div class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                 <div class="border-b border-gray-100 px-6 py-5 sm:px-8">
-                    <div class="mb-6 flex flex-wrap items-center justify-between">
+                    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {{ $poll->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                             {{ $poll->is_active ? 'Active' : 'Inactive' }}
                         </span>
 
-                        <div>
+                        <div class="flex flex-col items-end gap-1 text-right">
                             @if ($poll->starts_at)
                                 <span class="text-xs text-gray-900">
                                     Starts {{ $poll->starts_at->format('M d, Y h:i A') }}
@@ -39,6 +41,18 @@
                         </div>
                     </div>
 
+                    @if (session('success'))
+                        <div class="mb-6 rounded-2xl border text-center border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-6 rounded-2xl border text-center border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @if (!$poll->is_active)
                         <div class="mb-6 rounded-2xl border text-center border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                             This poll is currently inactive and not accepting responses.
@@ -51,28 +65,33 @@
                         <div class="mb-6 rounded-2xl border text-center border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-700">
                             This poll has ended and is no longer accepting votes.
                         </div>
+                    @elseif ($hasAlreadyVoted)
+                        <div class="mb-6 rounded-2xl border text-center border-purple-200 bg-purple-50 px-4 py-4 text-sm text-purple-700">
+                            You have already voted on this poll.
+                        </div>
                     @else
                         <div class="mb-6 rounded-2xl border text-center border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
                             This poll is live and ready for voting.
                         </div>
                     @endif
 
-                    <p class="mt-3 text-sm text-gray-500 text-right">
+                    <p class="mt-3 text-right text-sm text-gray-500">
                         Created by {{ $poll->user->name }}
                     </p>
-
                 </div>
 
                 <div class="px-6 py-6 sm:px-8">
-                    
-                    <h3 class="pb-3 text-l font-bold tracking-tight text-gray-700 sm:text-2xl">
+                    <h3 class="pb-3 text-xl font-bold tracking-tight text-gray-700 sm:text-2xl">
                         {{ $poll->question }}
                     </h3>
 
-                    <form class="space-y-4">
+                    <form method="POST" action="{{ route('polls.vote', $poll) }}" class="space-y-4">
+                        @csrf
+
                         @foreach ($poll->options as $option)
                             <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-gray-200 px-4 py-4 transition hover:border-gray-300 hover:bg-gray-50">
-                                <input type="radio" name="poll_option_id" value="{{ $option->id }}" class="mt-1 h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-900" {{ !$isAvailableForVoting ? 'disabled' : '' }} >
+                                <input type="radio" name="poll_option_id" value="{{ $option->id }}" class="mt-1 h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-900"
+                                    {{ (!$isAvailableForVoting || $hasAlreadyVoted) ? 'disabled' : '' }} {{ old('poll_option_id') == $option->id ? 'checked' : '' }} >
 
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-medium text-gray-900">
@@ -82,16 +101,21 @@
                             </label>
                         @endforeach
 
-                        <div class="pt-2 flex justify-center">
-                            <button type="submit" class="inline-flex items-center rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50" {{ !$isAvailableForVoting ? 'disabled' : '' }} >
+                        @error('poll_option_id')
+                            <p class="text-center text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+
+                        <div class="flex justify-center pt-2">
+                            <button type="submit" class="inline-flex items-center rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                {{ (!$isAvailableForVoting || $hasAlreadyVoted) ? 'disabled' : '' }} >
                                 Submit Vote
                             </button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </div>
     </div>
 </body>
+
 </html>
