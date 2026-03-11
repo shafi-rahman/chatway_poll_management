@@ -184,6 +184,20 @@ class PollController extends Controller
         return view('admin.polls.show', compact('poll'));
     }
 
+    // poll results
+    public function results(Request $request, Poll $poll): View
+    {
+        if ($poll->user_id !== $request->user()->id) {
+            abort(403, 'You are not authorized to view these results.');
+        }
+
+        $poll->load(['options.votes', 'user']);
+        $resultRows = $poll->resultRows();
+        $totalVotes = $poll->totalVotesCount();
+
+        return view('admin.polls.results', compact('poll', 'resultRows', 'totalVotes'));
+    }
+
 }
 
 

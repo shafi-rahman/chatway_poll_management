@@ -26,6 +26,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/polls/{poll}/show', [PollController::class, 'show'])->name('polls.show');
     Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
     Route::put('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
+    Route::get('/polls/{poll}/results', [PollController::class, 'results'])->name('polls.results');
 });
 
 Route::get('/polls/{poll}', [PublicPollController::class, 'show'])->name('polls.show');

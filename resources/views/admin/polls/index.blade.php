@@ -86,6 +86,9 @@
                                     <a href="{{ route('admin.polls.show', $poll) }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                                         View
                                     </a>
+                                    <a href="{{ route('admin.polls.results', $poll) }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition" >
+                                        Results
+                                    </a>
                                     <a href="{{ route('admin.polls.edit', $poll) }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                                         Edit
                                     </a>
