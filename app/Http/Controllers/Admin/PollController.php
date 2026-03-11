@@ -171,7 +171,19 @@ class PollController extends Controller
             ->with('success', 'Poll updated successfully.');
     }
 
-    
+    // show poll
+    public function show(Request $request, Poll $poll): View
+    {
+        if ($poll->user_id !== $request->user()->id) {
+            abort(403, 'You are not authorized to view this poll.');
+        }
+
+        $poll->load(['options', 'user']);
+        $poll->loadCount(['votes', 'options']);
+
+        return view('admin.polls.show', compact('poll'));
+    }
+
 }
 
 

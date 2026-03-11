@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicPollController;
 use App\Http\Controllers\Admin\PollController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/polls', [PollController::class, 'index'])->name('polls.index');
     Route::get('/polls/create', [PollController::class, 'create'])->name('polls.create');
     Route::post('/polls', [PollController::class, 'store'])->name('polls.store');
+    Route::get('/polls/{poll}/show', [PollController::class, 'show'])->name('polls.show');
     Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
     Route::put('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
 });
