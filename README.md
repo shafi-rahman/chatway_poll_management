@@ -8,9 +8,9 @@ The goal of this project was to build a simple but scalable polling platform whe
 The application focuses on clean backend structure, proper validation, and a straightforward user experience.
 
 
-### Features
+# Features
 
-# Admin Features
+### Admin Features
 - Admin registration and authentication
 - Admin profile management
 - Create polls with multiple options
@@ -20,7 +20,7 @@ The application focuses on clean backend structure, proper validation, and a str
 - View poll results
 - Share public poll links
 
-# Public Poll Features
+### Public Poll Features
 - Public poll page accessible via shareable link
 - Users can vote without authentication
 - Each user/IP can vote only once
@@ -30,13 +30,13 @@ The application focuses on clean backend structure, proper validation, and a str
   - end time
 - Poll results displayed on the poll page
 
-# Real-Time Updates
+### Real-Time Updates
 - Vote results update instantly using Laravel broadcasting
 - Admin results page updates live
 - Public poll results update live
 - No page refresh required
 
-### Tech Stack
+# Tech Stack
 Backend:
 - Laravel
 - MySQL
@@ -56,7 +56,7 @@ Realtime:
 - Laravel Echo
 - WebSockets
 
-### Installation
+# Installation
 
 Clone the repository:
 git clone https://github.com/your-repo/chatway-poll-management.git
@@ -73,14 +73,14 @@ cp .env.example .env
 Generate application key:
 php artisan key:generate
 
-### Database Setup
+# Database Setup
 
 Update your `.env` database configuration.
 
 Run migrations:
 php artisan migrate
 
-### Running the Application
+# Running the Application on local
 
 Start the Laravel server:
 php artisan serve
@@ -88,7 +88,7 @@ php artisan serve
 Start Vite for frontend assets:
 npm run dev
 
-### Running WebSockets (Realtime)
+# Running WebSockets (Realtime)
 
 This project uses Laravel Reverb for real-time broadcasting.
 
@@ -97,7 +97,7 @@ php artisan reverb:start
 
 Now the application will broadcast vote updates to connected clients.
 
-### Running Tests
+# Running Tests
 
 Run the test suite with:
 php artisan test
@@ -107,7 +107,7 @@ Tests cover:
 - vote submission
 - duplicate vote prevention
 
-### Project Structure Overview
+# Project Structure Overview
 
 Important components:
 app/
@@ -130,28 +130,28 @@ resources/views/
  └── polls/
      └── show.blade.php
 
-### Key Design Decisions
+# Key Design Decisions
 
-# Laravel Breeze Authentication
+### Laravel Breeze Authentication
 Laravel Breeze was used to provide a lightweight authentication system for admin users.
 It provides login, registration, and profile management out of the box while keeping the application structure simple and maintainable.
 
-# Poll UUIDs
+### Poll UUIDs
 Polls use UUIDs instead of numeric IDs.
 This prevents predictable URLs and makes public poll links safer to share.
 
-# Vote Protection
+### Vote Protection
 To prevent duplicate voting, the system uses a combination of:
 - IP address
 - session token
 
 This helps ensure each visitor can only vote once per poll.
 
-# Editing Restrictions
+### Editing Restrictions
 Polls cannot be edited after votes have been recorded.
 This protects the integrity of the poll results.
 
-# Real-Time Results
+### Real-Time Results
 Each vote triggers a broadcast event which updates:
 - admin results page
 - public poll results
