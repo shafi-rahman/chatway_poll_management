@@ -59,7 +59,7 @@ Realtime:
 # Installation
 
 Clone the repository:
-git clone https://github.com/your-repo/chatway-poll-management.git
+git clone https://github.com/shafi-rahman/chatway_poll_management.git
 cd chatway-poll-management
 
 Install dependencies:
