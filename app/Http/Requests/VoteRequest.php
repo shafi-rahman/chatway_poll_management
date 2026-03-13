@@ -14,7 +14,7 @@ class VoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'poll_option_id' => ['required', 'integer'],
+            'poll_option_id' => ['required', 'integer', 'exists:poll_options,id'],
         ];
     }
 }
