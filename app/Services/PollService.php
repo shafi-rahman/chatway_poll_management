@@ -42,7 +42,7 @@ class PollService
 
     public function getPollWithResults(Poll $poll): array
     {
-        $poll->load(['options.votes', 'user']);
+        $poll->load(['options', 'user']);
 
         return [
             'poll'       => $poll,

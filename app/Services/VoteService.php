@@ -44,7 +44,7 @@ class VoteService
 
     public function getPollData(Poll $poll, Request $request): array
     {
-        $poll->load(['options.votes', 'user']);
+        $poll->load(['options', 'user']);
 
         [$hasStarted, $hasEnded, $isAvailableForVoting] = $this->getPollAvailability($poll);
 
@@ -80,7 +80,7 @@ class VoteService
             ]);
         });
 
-        $poll->load(['options.votes']);
+        $poll->loadMissing('options');
         $resultRows = $poll->resultRows()->values()->all();
         $totalVotes = $poll->totalVotesCount();
 
