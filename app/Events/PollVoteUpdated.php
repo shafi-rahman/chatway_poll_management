@@ -4,11 +4,11 @@ namespace App\Events;
 
 use App\Models\Poll;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PollVoteUpdated implements ShouldBroadcastNow
+class PollVoteUpdated implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
 
