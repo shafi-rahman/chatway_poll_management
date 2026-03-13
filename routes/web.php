@@ -29,7 +29,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/polls/{poll}/results', [PollController::class, 'results'])->name('polls.results');
 });
 
-Route::get('/polls/{poll}', [PublicPollController::class, 'show'])->name('polls.show');
-Route::post('/polls/{poll}/vote', [PublicPollController::class, 'vote'])->name('polls.vote');
+Route::get('/polls/{poll}', [PublicPollController::class, 'show'])->middleware('throttle:60,1')->name('polls.show');
+Route::post('/polls/{poll}/vote', [PublicPollController::class, 'vote'])->middleware('throttle:5,1')->name('polls.vote');
 
 require __DIR__.'/auth.php';
