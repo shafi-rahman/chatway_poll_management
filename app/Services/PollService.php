@@ -66,6 +66,7 @@ class PollService
                 $request->cleanOptions()->map(fn ($option, $index) => [
                     'option_text' => $option,
                     'sort_order'  => $index + 1,
+                    'vote_count' => 0,
                 ])->all()
             );
 
@@ -89,6 +90,7 @@ class PollService
                 $request->cleanOptions()->map(fn ($option, $index) => [
                     'option_text' => $option,
                     'sort_order'  => $index + 1,
+                    'vote_count' => 0,
                 ])->all()
             );
         });

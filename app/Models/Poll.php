@@ -16,6 +16,7 @@ class Poll extends Model
         'uuid',
         'question',
         'is_active',
+        'total_votes',
         'starts_at',
         'ends_at',
     ];
@@ -23,7 +24,9 @@ class Poll extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'is_active' => 'boolean',
+            'total_votes' => 'integer',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -58,34 +61,27 @@ class Poll extends Model
         return $this->hasMany(Vote::class);
     }
 
-    // result rows for each option
     public function resultRows(): Collection
     {
         $this->loadMissing('options');
 
-        $voteCounts = Vote::where('poll_id', $this->id)
-            ->selectRaw('poll_option_id, COUNT(*) as vote_count')
-            ->groupBy('poll_option_id')
-            ->pluck('vote_count', 'poll_option_id');
+        $totalVotes = (int) $this->total_votes;
 
-        $totalVotes = $voteCounts->sum();
-
-        return $this->options->map(function ($option) use ($voteCounts, $totalVotes) {
-            $voteCount = (int) $voteCounts->get($option->id, 0);
+        return $this->options->map(function ($option) use ($totalVotes) {
+            $voteCount = (int) $option->vote_count;
             $percentage = $totalVotes > 0 ? round(($voteCount / $totalVotes) * 100, 1) : 0;
 
             return [
-                'id'          => $option->id,
+                'id' => $option->id,
                 'option_text' => $option->option_text,
-                'vote_count'  => $voteCount,
-                'percentage'  => $percentage,
+                'vote_count' => $voteCount,
+                'percentage' => $percentage,
             ];
         });
     }
 
-    // total number of votes for the poll
     public function totalVotesCount(): int
     {
-        return $this->votes()->count();
+        return (int) $this->total_votes;
     }
 }

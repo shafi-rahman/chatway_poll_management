@@ -12,8 +12,17 @@ class PollOption extends Model
     protected $fillable = [
         'poll_id',
         'option_text',
+        'vote_count',
         'sort_order',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'vote_count' => 'integer',
+            'sort_order' => 'integer',
+        ];
+    }
 
     public function poll()
     {

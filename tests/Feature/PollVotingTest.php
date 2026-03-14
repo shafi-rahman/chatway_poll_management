@@ -49,13 +49,11 @@ class PollVotingTest extends TestCase
 
         $response = $this->withSession([
                 'poll_voter_token' => 'vote-session-1',
-            ])
-            ->withServerVariables([
+            ])->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.10',
-            ])
-            ->postJson(route('polls.vote', $poll), [
+            ])->postJson(route('polls.vote', $poll), [
                 'poll_option_id' => $option->id,
-            ]);
+        ]);
 
         $response->assertOk()
             ->assertJson([
@@ -64,11 +62,48 @@ class PollVotingTest extends TestCase
                 'total_votes' => 1,
             ]);
 
+        $this->assertDatabaseHas('polls', [
+            'id' => $poll->id,
+            'total_votes' => 1,
+        ]);
+
+        $this->assertDatabaseHas('poll_options', [
+            'id' => $option->id,
+            'vote_count' => 1,
+        ]);
+
         $this->assertDatabaseHas('votes', [
             'poll_id' => $poll->id,
             'poll_option_id' => $option->id,
             'ip_address' => '127.0.0.10',
             'session_token' => 'vote-session-1',
+        ]);
+    }
+
+    public function test_vote_submission_updates_poll_and_option_counters(): void
+    {
+        $poll = $this->createPollWithOptions();
+        $option = $poll->options->first();
+
+        $this->withSession([
+                'poll_voter_token' => 'counter-session',
+            ])
+            ->withServerVariables([
+                'REMOTE_ADDR' => '127.0.0.90',
+            ])
+            ->postJson(route('polls.vote', $poll), [
+                'poll_option_id' => $option->id,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('polls', [
+            'id' => $poll->id,
+            'total_votes' => 1,
+        ]);
+
+        $this->assertDatabaseHas('poll_options', [
+            'id' => $option->id,
+            'vote_count' => 1,
         ]);
     }
 

@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Events\PollVoteUpdated;
 use App\Models\Poll;
 use App\Models\Vote;
+use App\Models\PollOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class VoteService
 {
@@ -71,23 +73,50 @@ class VoteService
             return null;
         }
 
-        DB::transaction(function () use ($poll, $selectedOption, $ipAddress, $sessionToken): void {
-            Vote::create([
-                'poll_id'        => $poll->id,
-                'poll_option_id' => $selectedOption->id,
-                'ip_address'     => $ipAddress,
-                'session_token'  => $sessionToken,
-            ]);
-        });
+        try {
+            DB::transaction(function () use ($poll, $selectedOption, $ipAddress, $sessionToken): void {
+                Vote::create([
+                    'poll_id'        => $poll->id,
+                    'poll_option_id' => $selectedOption->id,
+                    'ip_address'     => $ipAddress,
+                    'session_token'  => $sessionToken,
+                ]);
 
-        $poll->loadMissing('options');
+                Poll::query()
+                    ->where('id', $poll->id)
+                    ->increment('total_votes');
+
+                PollOption::query()
+                    ->where('id', $selectedOption->id)
+                    ->increment('vote_count');
+            });
+        } catch (QueryException $e) {
+            Log::warning('Vote submission failed due to duplicate or DB constraint.', [
+                'poll_id' => $poll->id,
+                'poll_uuid' => $poll->uuid,
+                'option_id' => $optionId,
+                'ip_address' => $ipAddress,
+                'session_token' => $sessionToken,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        $poll->refresh()->load('options');
+
         $resultRows = $poll->resultRows()->values()->all();
         $totalVotes = $poll->totalVotesCount();
 
         try {
             broadcast(new PollVoteUpdated($poll, $resultRows, $totalVotes));
         } catch (\Throwable $e) {
-            \Log::warning('Broadcast failed: ' . $e->getMessage());
+            Log::warning('Broadcast failed.', [
+                'poll_id' => $poll->id,
+                'poll_uuid' => $poll->uuid,
+                'option_id' => $optionId,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return compact('resultRows', 'totalVotes');
