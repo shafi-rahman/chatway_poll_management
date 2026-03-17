@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePollRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
+use App\Models\VoteHistory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -33,22 +34,22 @@ class PollService
         return $poll;
     }
 
-    public function getPollWithDetails(Poll $poll): Poll
+    public function getPollWithDetails(Poll $poll): array
     {
         $poll->load(['options', 'user']);
         $poll->loadCount(['votes', 'options']);
 
-        return $poll;
-    }
-
-    public function getPollWithResults(Poll $poll): array
-    {
-        $poll->load(['options', 'user']);
+        $voteHistory = VoteHistory::with(['fromOption', 'toOption'])
+            ->where('poll_id', $poll->id)
+            ->orderByDesc('created_at')
+            ->limit(500)
+            ->get();
 
         return [
-            'poll'       => $poll,
-            'resultRows' => $poll->resultRows(),
-            'totalVotes' => $poll->totalVotesCount(),
+            'poll'        => $poll,
+            'resultRows'  => $poll->resultRows(),
+            'totalVotes'  => $poll->totalVotesCount(),
+            'voteHistory' => $voteHistory,
         ];
     }
 

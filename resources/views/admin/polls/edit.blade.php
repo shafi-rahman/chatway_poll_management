@@ -9,10 +9,15 @@
                     Update your poll question, options, status, and schedule.
                 </p>
             </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.polls.index') }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+                    Back to Polls
+                </a>
 
-            <a href="{{ route('admin.polls.index') }}" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-                Back to Polls
-            </a>
+                <a href="{{ route('admin.polls.show', $poll) }}" class="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 transition">
+                    View Poll
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -156,7 +161,7 @@
                                                 class="remove-option-button mt-7 inline-flex items-center rounded-lg border px-3 py-2 text-sm font-medium transition
                                                        {{ $opt['has_votes'] ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' }}"
                                                 {{ $opt['has_votes'] ? 'disabled' : '' }}
-                                                title="{{ $opt['has_votes'] ? 'Cannot remove — this option has votes' : '' }}">
+                                                title="{{ $opt['has_votes'] ? 'Cannot remove - this option has votes' : '' }}">
                                             Remove
                                         </button>
                                     </div>

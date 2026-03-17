@@ -66,17 +66,15 @@ class PollController extends Controller
             abort(403, 'You are not authorized to view this poll.');
         }
 
-        return view('admin.polls.show', [
-            'poll' => $this->pollService->getPollWithDetails($poll),
-        ]);
+        return view('admin.polls.show', $this->pollService->getPollWithDetails($poll));
     }
 
-    public function results(Request $request, Poll $poll): View
+    public function results(Request $request, Poll $poll): RedirectResponse
     {
         if ($poll->user_id !== $request->user()->id) {
             abort(403, 'You are not authorized to view these results.');
         }
 
-        return view('admin.polls.results', $this->pollService->getPollWithResults($poll));
+        return redirect()->route('admin.polls.show', $poll);
     }
 }

@@ -72,10 +72,11 @@ class Poll extends Model
             $percentage = $totalVotes > 0 ? round(($voteCount / $totalVotes) * 100, 1) : 0;
 
             return [
-                'id' => $option->id,
+                'id'          => $option->id,
                 'option_text' => $option->option_text,
-                'vote_count' => $voteCount,
-                'percentage' => $percentage,
+                'vote_count'  => $voteCount,
+                'percentage'  => $percentage,
+                'is_active'   => (bool) $option->is_active,
             ];
         });
     }
