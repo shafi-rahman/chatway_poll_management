@@ -6,10 +6,9 @@ use App\Events\PollVoteUpdated;
 use App\Models\Poll;
 use App\Models\Vote;
 use App\Models\PollOption;
-use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 class VoteService
@@ -24,34 +23,21 @@ class VoteService
         return [$hasStarted, $hasEnded, $isAvailableForVoting];
     }
 
-    public function ensureSessionToken(Request $request): string
-    {
-        if (!$request->session()->has('poll_voter_token')) {
-            $request->session()->put('poll_voter_token', (string) Str::uuid());
-        }
-
-        return (string) $request->session()->get('poll_voter_token');
-    }
-
-    public function hasAlreadyVoted(Poll $poll, string $ipAddress, string $sessionToken): bool
+    public function hasAlreadyVoted(Poll $poll, string $cookieToken): bool
     {
         return Vote::query()
             ->where('poll_id', $poll->id)
-            ->where(function ($query) use ($ipAddress, $sessionToken) {
-                $query->where('ip_address', $ipAddress)
-                      ->orWhere('session_token', $sessionToken);
-            })
+            ->where('session_token', $cookieToken)
             ->exists();
     }
 
-    public function getPollData(Poll $poll, Request $request): array
+    public function getPollData(Poll $poll, string $cookieToken): array
     {
         $poll->load(['options', 'user']);
 
         [$hasStarted, $hasEnded, $isAvailableForVoting] = $this->getPollAvailability($poll);
 
-        $sessionToken    = $this->ensureSessionToken($request);
-        $hasAlreadyVoted = $this->hasAlreadyVoted($poll, $request->ip(), $sessionToken);
+        $hasAlreadyVoted = $this->hasAlreadyVoted($poll, $cookieToken);
 
         return [
             'poll'                 => $poll,
@@ -64,8 +50,8 @@ class VoteService
         ];
     }
 
-    // Returns ['resultRows' => array, 'totalVotes' => int] or null if option invalid
-    public function submitVote(Poll $poll, int $optionId, string $ipAddress, string $sessionToken): ?array
+    // Returns ['resultRows' => array, 'totalVotes' => int], false on duplicate/db error, null if option invalid
+    public function submitVote(Poll $poll, int $optionId, string $ipAddress, string $cookieToken): array|false|null
     {
         $selectedOption = $poll->options()->where('id', $optionId)->first();
 
@@ -74,12 +60,12 @@ class VoteService
         }
 
         try {
-            DB::transaction(function () use ($poll, $selectedOption, $ipAddress, $sessionToken): void {
+            DB::transaction(function () use ($poll, $selectedOption, $ipAddress, $cookieToken): void {
                 Vote::create([
                     'poll_id'        => $poll->id,
                     'poll_option_id' => $selectedOption->id,
                     'ip_address'     => $ipAddress,
-                    'session_token'  => $sessionToken,
+                    'session_token'  => $cookieToken,
                 ]);
 
                 Poll::query()
@@ -92,12 +78,12 @@ class VoteService
             });
         } catch (QueryException $e) {
             Log::warning('Vote submission failed due to duplicate or DB constraint.', [
-                'poll_id' => $poll->id,
-                'poll_uuid' => $poll->uuid,
-                'option_id' => $optionId,
-                'ip_address' => $ipAddress,
-                'session_token' => $sessionToken,
-                'error' => $e->getMessage(),
+                'poll_id'      => $poll->id,
+                'poll_uuid'    => $poll->uuid,
+                'option_id'    => $optionId,
+                'ip_address'   => $ipAddress,
+                'cookie_token' => $cookieToken,
+                'error'        => $e->getMessage(),
             ]);
 
             return false;

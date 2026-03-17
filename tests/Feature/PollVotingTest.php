@@ -47,9 +47,8 @@ class PollVotingTest extends TestCase
         $poll = $this->createPollWithOptions();
         $option = $poll->options->first();
 
-        $response = $this->withSession([
-                'poll_voter_token' => 'vote-session-1',
-            ])->withServerVariables([
+        $response = $this->withCookie('poll_voter_token', 'vote-session-1')
+            ->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.10',
             ])->postJson(route('polls.vote', $poll), [
                 'poll_option_id' => $option->id,
@@ -85,9 +84,7 @@ class PollVotingTest extends TestCase
         $poll = $this->createPollWithOptions();
         $option = $poll->options->first();
 
-        $this->withSession([
-                'poll_voter_token' => 'counter-session',
-            ])
+        $this->withCookie('poll_voter_token', 'counter-session')
             ->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.90',
             ])
@@ -116,18 +113,14 @@ class PollVotingTest extends TestCase
             'poll_option_id' => $option->id,
         ];
 
-        $this->withSession([
-                'poll_voter_token' => 'duplicate-session',
-            ])
+        $this->withCookie('poll_voter_token', 'duplicate-session')
             ->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.20',
             ])
             ->postJson(route('polls.vote', $poll), $payload)
             ->assertOk();
 
-        $secondResponse = $this->withSession([
-                'poll_voter_token' => 'duplicate-session',
-            ])
+        $secondResponse = $this->withCookie('poll_voter_token', 'duplicate-session')
             ->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.20',
             ])
@@ -163,9 +156,7 @@ class PollVotingTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        $response = $this->withSession([
-                'poll_voter_token' => 'invalid-option-session',
-            ])
+        $response = $this->withCookie('poll_voter_token', 'invalid-option-session')
             ->withServerVariables([
                 'REMOTE_ADDR' => '127.0.0.30',
             ])

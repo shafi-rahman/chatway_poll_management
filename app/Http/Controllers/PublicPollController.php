@@ -5,19 +5,31 @@ namespace App\Http\Controllers;
 use App\Http\Requests\VoteRequest;
 use App\Models\Poll;
 use App\Services\VoteService;
-use Illuminate\Contracts\View\View;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 class PublicPollController extends Controller
 {
+    // Cookie name used to identify a voter across visits
+    private const VOTER_COOKIE = 'poll_voter_token';
+
+    // 1 year in minutes
+    private const COOKIE_MINUTES = 60 * 24 * 365;
+
     public function __construct(private VoteService $voteService) {}
 
-    public function show(Request $request, Poll $poll): View
+    public function show(Request $request, Poll $poll): Response
     {
-        return view('polls.show', $this->voteService->getPollData($poll, $request));
+        $cookieToken = $this->resolveCookieToken($request);
+
+        $data = $this->voteService->getPollData($poll, $cookieToken);
+
+        return response()
+            ->view('polls.show', $data)
+            ->cookie(self::VOTER_COOKIE, $cookieToken, self::COOKIE_MINUTES);
     }
 
     public function vote(VoteRequest $request, Poll $poll): RedirectResponse|JsonResponse
@@ -40,18 +52,14 @@ class PublicPollController extends Controller
             return $this->voteErrorResponse($request, $poll, 'This poll is not currently available for voting.');
         }
 
-        $sessionToken = $this->voteService->ensureSessionToken($request);
-        $ipAddress    = $request->ip();
+        $cookieToken = $this->resolveCookieToken($request);
+        $ipAddress   = $request->ip();
 
-        if ($this->voteService->hasAlreadyVoted($poll, $ipAddress, $sessionToken)) {
+        if ($this->voteService->hasAlreadyVoted($poll, $cookieToken)) {
             return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
         }
 
-        try {
-            $result = $this->voteService->submitVote($poll, $request->integer('poll_option_id'), $ipAddress, $sessionToken);
-        } catch (QueryException) {
-            return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
-        }
+        $result = $this->voteService->submitVote($poll, $request->integer('poll_option_id'), $ipAddress, $cookieToken);
 
         if ($result === null) {
             if ($request->expectsJson()) {
@@ -64,18 +72,30 @@ class PublicPollController extends Controller
             return back()->withErrors(['poll_option_id' => 'Please select a valid poll option.'])->withInput();
         }
 
+        if ($result === false) {
+            return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
+        }
+
+        $cookie = cookie(self::VOTER_COOKIE, $cookieToken, self::COOKIE_MINUTES);
+
         if ($request->expectsJson()) {
             return response()->json([
                 'message'           => 'Your vote has been submitted successfully.',
                 'total_votes'       => $result['totalVotes'],
                 'result_rows'       => $result['resultRows'],
                 'has_already_voted' => true,
-            ]);
+            ])->cookie($cookie);
         }
 
         return redirect()
             ->route('polls.show', $poll)
-            ->with('success', 'Your vote has been submitted successfully.');
+            ->with('success', 'Your vote has been submitted successfully.')
+            ->cookie($cookie);
+    }
+
+    private function resolveCookieToken(Request $request): string
+    {
+        return $request->cookie(self::VOTER_COOKIE) ?? (string) Str::uuid();
     }
 
     private function voteErrorResponse(Request $request, Poll $poll, string $message, int $status = 422): RedirectResponse|JsonResponse
