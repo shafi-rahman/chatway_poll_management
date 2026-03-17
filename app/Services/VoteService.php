@@ -77,7 +77,19 @@ class VoteService
                     ->increment('vote_count');
             });
         } catch (QueryException $e) {
-            Log::warning('Vote submission failed due to duplicate or DB constraint.', [
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                Log::warning('Duplicate vote attempt blocked at DB level.', [
+                    'poll_id'      => $poll->id,
+                    'poll_uuid'    => $poll->uuid,
+                    'option_id'    => $optionId,
+                    'ip_address'   => $ipAddress,
+                    'cookie_token' => $cookieToken,
+                ]);
+
+                return false;
+            }
+
+            Log::error('Vote submission failed due to unexpected database error.', [
                 'poll_id'      => $poll->id,
                 'poll_uuid'    => $poll->uuid,
                 'option_id'    => $optionId,
@@ -86,7 +98,7 @@ class VoteService
                 'error'        => $e->getMessage(),
             ]);
 
-            return false;
+            throw $e;
         }
 
         $poll->refresh()->load('options');

@@ -193,7 +193,7 @@
             };
 
             const div = document.createElement('div');
-            div.className = `mb-6 rounded-2xl border text-center px-4 py-4 text-sm ${colorMap[type] ?? colorMap.success}`;
+            div.className = `mb-6 rounded-2xl border text-center px-4 py-4 text-sm transition-opacity duration-500 ${colorMap[type] ?? colorMap.success}`;
             div.textContent = message;
 
             messageStack.prepend(div);
@@ -290,20 +290,23 @@
 
                     updateResultsUI(data.result_rows, data.total_votes);
                     disableVotingUI();
-                    prependMessage(data.message || 'Your vote has been submitted successfully.', 'success');
 
                     const liveMessage = document.getElementById('live-message');
                     if (liveMessage) {
                         liveMessage.remove();
                     }
 
-                    if (!document.getElementById('already-voted-message') && messageStack) {
-                        const votedMessage = document.createElement('div');
-                        votedMessage.id = 'already-voted-message';
-                        votedMessage.className = 'mb-6 rounded-2xl border text-center border-purple-200 bg-purple-50 px-4 py-4 text-sm text-purple-700';
-                        votedMessage.textContent = 'You have already voted on this poll.';
-                        messageStack.appendChild(votedMessage);
-                    }
+                    prependMessage(data.message || 'Your vote has been submitted successfully.', 'success');
+
+                    setTimeout(() => {
+                        if (!document.getElementById('already-voted-message') && messageStack) {
+                            const votedMessage = document.createElement('div');
+                            votedMessage.id = 'already-voted-message';
+                            votedMessage.className = 'mb-6 rounded-2xl border text-center border-purple-200 bg-purple-50 px-4 py-4 text-sm text-purple-700';
+                            votedMessage.textContent = 'You have already voted on this poll.';
+                            messageStack.appendChild(votedMessage);
+                        }
+                    }, 3500);
 
                     if (submitButton) {
                         submitButton.textContent = 'Vote Submitted';

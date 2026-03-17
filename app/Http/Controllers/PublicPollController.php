@@ -13,10 +13,10 @@ use Illuminate\Support\Str;
 
 class PublicPollController extends Controller
 {
-    // Cookie name used to identify a voter across visits
+    // Cookie name
     private const VOTER_COOKIE = 'poll_voter_token';
 
-    // 1 year in minutes
+    // 1 year
     private const COOKIE_MINUTES = 60 * 24 * 365;
 
     public function __construct(private VoteService $voteService) {}
@@ -34,7 +34,7 @@ class PublicPollController extends Controller
 
     public function vote(VoteRequest $request, Poll $poll): RedirectResponse|JsonResponse
     {
-        [$hasStarted, $hasEnded, $isAvailableForVoting] = $this->voteService->getPollAvailability($poll);
+        [$hasStarted, $hasEnded] = $this->voteService->getPollAvailability($poll);
 
         if (!$poll->is_active) {
             return $this->voteErrorResponse($request, $poll, 'This poll is currently inactive and not accepting votes.');
@@ -48,10 +48,6 @@ class PublicPollController extends Controller
             return $this->voteErrorResponse($request, $poll, 'This poll has ended and is no longer accepting votes.');
         }
 
-        if (!$isAvailableForVoting) {
-            return $this->voteErrorResponse($request, $poll, 'This poll is not currently available for voting.');
-        }
-
         $cookieToken = $this->resolveCookieToken($request);
         $ipAddress   = $request->ip();
 
@@ -59,7 +55,11 @@ class PublicPollController extends Controller
             return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
         }
 
-        $result = $this->voteService->submitVote($poll, $request->integer('poll_option_id'), $ipAddress, $cookieToken);
+        try {
+            $result = $this->voteService->submitVote($poll, $request->integer('poll_option_id'), $ipAddress, $cookieToken);
+        } catch (\Throwable) {
+            return $this->voteErrorResponse($request, $poll, 'Something went wrong. Please try again later.', 500);
+        }
 
         if ($result === null) {
             if ($request->expectsJson()) {
