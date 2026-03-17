@@ -13,6 +13,7 @@ class PollOption extends Model
         'poll_id',
         'option_text',
         'vote_count',
+        'is_active',
         'sort_order',
     ];
 
@@ -20,6 +21,7 @@ class PollOption extends Model
     {
         return [
             'vote_count' => 'integer',
+            'is_active'  => 'boolean',
             'sort_order' => 'integer',
         ];
     }

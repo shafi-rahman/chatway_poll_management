@@ -90,7 +90,7 @@
                     <form id="poll-vote-form" method="POST" action="{{ route('polls.vote', $poll) }}" class="space-y-4">
                         @csrf
 
-                        @foreach ($poll->options as $option)
+                        @foreach ($poll->options->where('is_active', true) as $option)
                             <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-gray-200 px-4 py-4 transition hover:border-gray-300 hover:bg-gray-50">
                                 <input type="radio" name="poll_option_id" value="{{ $option->id }}" class="poll-option-input mt-1 h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-900"
                                     {{ (!$isAvailableForVoting || $hasAlreadyVoted) ? 'disabled' : '' }}

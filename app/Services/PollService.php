@@ -5,13 +5,14 @@ namespace App\Services;
 use App\Http\Requests\StorePollRequest;
 use App\Http\Requests\UpdatePollRequest;
 use App\Models\Poll;
+use App\Models\PollOption;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class PollService
 {
-    public function getPaginatedPolls(int $userId, int $perPage = 10): LengthAwarePaginator
+    public function getPaginatedPolls(int $userId, int $perPage = 3): LengthAwarePaginator
     {
         return Poll::query()
             ->where('user_id', $userId)
@@ -27,7 +28,7 @@ class PollService
 
     public function getPollForEdit(Poll $poll): Poll
     {
-        $poll->load('options');
+        $poll->load(['options' => fn ($q) => $q->withCount('votes')]);
 
         return $poll;
     }
@@ -84,15 +85,51 @@ class PollService
                 'ends_at'   => $request->input('ends_at'),
             ]);
 
-            $poll->options()->delete();
+            $submittedOptions = collect($request->input('options', []));
+            $existingOptionIds = $poll->options->pluck('id')->all();
 
-            $poll->options()->createMany(
-                $request->cleanOptions()->map(fn ($option, $index) => [
-                    'option_text' => $option,
-                    'sort_order'  => $index + 1,
-                    'vote_count' => 0,
-                ])->all()
-            );
+            $keptIds = $submittedOptions
+                ->filter(fn ($o) => !empty($o['id']))
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $poll->options()
+                ->whereNotIn('id', $keptIds)
+                ->whereDoesntHave('votes')
+                ->delete();
+
+            $sortOrder = 1;
+
+            foreach ($submittedOptions as $optionData) {
+                $text = trim($optionData['text'] ?? '');
+
+                if ($text === '') {
+                    continue;
+                }
+
+                $id       = !empty($optionData['id']) ? (int) $optionData['id'] : null;
+                $isActive = isset($optionData['is_active']) && (bool) $optionData['is_active'];
+
+                if ($id && in_array($id, $existingOptionIds)) {
+                    PollOption::where('id', $id)
+                        ->where('poll_id', $poll->id)
+                        ->update([
+                            'option_text' => $text,
+                            'is_active'   => $isActive,
+                            'sort_order'  => $sortOrder,
+                        ]);
+                } else {
+                    $poll->options()->create([
+                        'option_text' => $text,
+                        'is_active'   => true,
+                        'sort_order'  => $sortOrder,
+                        'vote_count'  => 0,
+                    ]);
+                }
+
+                $sortOrder++;
+            }
         });
     }
 }

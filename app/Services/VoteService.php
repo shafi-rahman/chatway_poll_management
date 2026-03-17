@@ -53,7 +53,7 @@ class VoteService
     // Returns ['resultRows' => array, 'totalVotes' => int], false on duplicate/db error, null if option invalid
     public function submitVote(Poll $poll, int $optionId, string $ipAddress, string $cookieToken): array|false|null
     {
-        $selectedOption = $poll->options()->where('id', $optionId)->first();
+        $selectedOption = $poll->options()->where('id', $optionId)->where('is_active', true)->first();
 
         if (!$selectedOption) {
             return null;

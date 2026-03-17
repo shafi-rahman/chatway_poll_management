@@ -36,16 +36,10 @@ class PollController extends Controller
             ->with('success', 'Poll created successfully.');
     }
 
-    public function edit(Request $request, Poll $poll): View|RedirectResponse
+    public function edit(Request $request, Poll $poll): View
     {
         if ($poll->user_id !== $request->user()->id) {
             abort(403, 'You are not authorized to edit this poll.');
-        }
-
-        if ($this->pollService->hasVotes($poll)) {
-            return redirect()
-                ->route('admin.polls.index')
-                ->with('error', 'This poll can no longer be edited because votes have already been recorded.');
         }
 
         return view('admin.polls.edit', [
@@ -57,12 +51,6 @@ class PollController extends Controller
     {
         if ($poll->user_id !== $request->user()->id) {
             abort(403, 'You are not authorized to update this poll.');
-        }
-
-        if ($this->pollService->hasVotes($poll)) {
-            return redirect()
-                ->route('admin.polls.index')
-                ->with('error', 'This poll can no longer be edited because votes have already been recorded.');
         }
 
         $this->pollService->updatePoll($poll, $request);
