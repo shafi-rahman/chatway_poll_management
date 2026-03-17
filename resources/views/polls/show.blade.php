@@ -68,7 +68,7 @@
                             </div>
                         @elseif ($hasAlreadyVoted)
                             <div id="already-voted-message" class="mb-6 rounded-2xl border text-center border-purple-200 bg-purple-50 px-4 py-4 text-sm text-purple-700">
-                                You have already voted on this poll.
+                                You have already voted on this poll. You can change your vote below.
                             </div>
                         @else
                             <div id="live-message" class="mb-6 rounded-2xl border text-center border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
@@ -93,8 +93,8 @@
                         @foreach ($poll->options->where('is_active', true) as $option)
                             <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-gray-200 px-4 py-4 transition hover:border-gray-300 hover:bg-gray-50">
                                 <input type="radio" name="poll_option_id" value="{{ $option->id }}" class="poll-option-input mt-1 h-4 w-4 border-gray-300 text-gray-900 focus:ring-gray-900"
-                                    {{ (!$isAvailableForVoting || $hasAlreadyVoted) ? 'disabled' : '' }}
-                                    {{ old('poll_option_id') == $option->id ? 'checked' : '' }} >
+                                    {{ !$isAvailableForVoting ? 'disabled' : '' }}
+                                    {{ old('poll_option_id', $currentVoteOptionId) == $option->id ? 'checked' : '' }} >
 
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-medium text-gray-900">
@@ -108,8 +108,8 @@
 
                         <div class="flex justify-center pt-2">
                             <button id="submit-vote-button" type="submit" class="inline-flex items-center rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                {{ (!$isAvailableForVoting || $hasAlreadyVoted) ? 'disabled' : '' }} >
-                                Submit Vote
+                                {{ !$isAvailableForVoting ? 'disabled' : '' }} >
+                                {{ $hasAlreadyVoted ? 'Change Vote' : 'Submit Vote' }}
                             </button>
                         </div>
                     </form>
@@ -257,6 +257,8 @@
                     return;
                 }
 
+                const previousButtonText = submitButton ? submitButton.textContent.trim() : 'Submit Vote';
+
                 if (submitButton) {
                     submitButton.disabled = true;
                     submitButton.textContent = 'Submitting...';
@@ -282,41 +284,47 @@
 
                         if (submitButton) {
                             submitButton.disabled = false;
-                            submitButton.textContent = 'Submit Vote';
+                            submitButton.textContent = previousButtonText;
                         }
 
                         return;
                     }
 
                     updateResultsUI(data.result_rows, data.total_votes);
-                    disableVotingUI();
 
-                    const liveMessage = document.getElementById('live-message');
-                    if (liveMessage) {
-                        liveMessage.remove();
+                    const alreadyVotedMsg = document.getElementById('already-voted-message');
+                    if (alreadyVotedMsg) alreadyVotedMsg.style.display = 'none';
+
+                    if (!data.is_update) {
+                        const liveMessage = document.getElementById('live-message');
+                        if (liveMessage) liveMessage.remove();
                     }
 
                     prependMessage(data.message || 'Your vote has been submitted successfully.', 'success');
 
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Change Vote';
+                    }
+
                     setTimeout(() => {
-                        if (!document.getElementById('already-voted-message') && messageStack) {
+                        const existingBanner = document.getElementById('already-voted-message');
+                        if (existingBanner) {
+                            existingBanner.style.display = '';
+                        } else if (messageStack) {
                             const votedMessage = document.createElement('div');
                             votedMessage.id = 'already-voted-message';
                             votedMessage.className = 'mb-6 rounded-2xl border text-center border-purple-200 bg-purple-50 px-4 py-4 text-sm text-purple-700';
-                            votedMessage.textContent = 'You have already voted on this poll.';
+                            votedMessage.textContent = 'You have already voted on this poll. You can change your vote below.';
                             messageStack.appendChild(votedMessage);
                         }
                     }, 3500);
-
-                    if (submitButton) {
-                        submitButton.textContent = 'Vote Submitted';
-                    }
                 } catch (error) {
                     showVoteError('Something went wrong while submitting your vote.');
 
                     if (submitButton) {
                         submitButton.disabled = false;
-                        submitButton.textContent = 'Submit Vote';
+                        submitButton.textContent = previousButtonText;
                     }
                 }
             });

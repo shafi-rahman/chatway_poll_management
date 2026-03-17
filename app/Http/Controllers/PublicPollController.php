@@ -51,10 +51,6 @@ class PublicPollController extends Controller
         $cookieToken = $this->resolveCookieToken($request);
         $ipAddress   = $request->ip();
 
-        if ($this->voteService->hasAlreadyVoted($poll, $cookieToken)) {
-            return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
-        }
-
         try {
             $result = $this->voteService->submitVote($poll, $request->integer('poll_option_id'), $ipAddress, $cookieToken);
         } catch (\Throwable) {
@@ -76,20 +72,24 @@ class PublicPollController extends Controller
             return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
         }
 
+        $successMessage = $result['isUpdate']
+            ? 'Your vote has been updated successfully.'
+            : 'Your vote has been submitted successfully.';
+
         $cookie = cookie(self::VOTER_COOKIE, $cookieToken, self::COOKIE_MINUTES);
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message'           => 'Your vote has been submitted successfully.',
-                'total_votes'       => $result['totalVotes'],
-                'result_rows'       => $result['resultRows'],
-                'has_already_voted' => true,
+                'message'     => $successMessage,
+                'total_votes' => $result['totalVotes'],
+                'result_rows' => $result['resultRows'],
+                'is_update'   => $result['isUpdate'],
             ])->cookie($cookie);
         }
 
         return redirect()
             ->route('polls.show', $poll)
-            ->with('success', 'Your vote has been submitted successfully.')
+            ->with('success', $successMessage)
             ->cookie($cookie);
     }
 

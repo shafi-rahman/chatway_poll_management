@@ -25,4 +25,9 @@ class Vote extends Model
     {
         return $this->belongsTo(PollOption::class, 'poll_option_id');
     }
+
+    public function history()
+    {
+        return $this->hasMany(VoteHistory::class);
+    }
 }
