@@ -37,16 +37,8 @@ class PublicPollController extends Controller
     {
         $availability = PollAvailability::for($poll);
 
-        if (!$poll->is_active) {
-            return $this->voteErrorResponse($request, $poll, 'This poll is currently inactive and not accepting votes.');
-        }
-
-        if (!$availability->hasStarted) {
-            return $this->voteErrorResponse($request, $poll, 'This poll is not open yet.');
-        }
-
-        if ($availability->hasEnded) {
-            return $this->voteErrorResponse($request, $poll, 'This poll has ended and is no longer accepting votes.');
+        if ($reason = $availability->unavailabilityReason()) {
+            return $this->voteErrorResponse($request, $poll, $reason);
         }
 
         $cookieToken = $this->resolveCookieToken($request);
@@ -73,9 +65,7 @@ class PublicPollController extends Controller
             return $this->voteErrorResponse($request, $poll, 'You have already voted on this poll.');
         }
 
-        $successMessage = $result['isUpdate']
-            ? 'Your vote has been updated successfully.'
-            : 'Your vote has been submitted successfully.';
+        $successMessage = $result['isUpdate'] ? 'Your vote has been updated successfully.' : 'Your vote has been submitted successfully.';
 
         $cookie = cookie(self::VOTER_COOKIE, $cookieToken, self::COOKIE_MINUTES);
 

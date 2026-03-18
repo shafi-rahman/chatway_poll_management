@@ -25,4 +25,21 @@ final class PollAvailability
             isAvailable: $poll->is_active && $hasStarted && ! $hasEnded,
         );
     }
+
+    public function unavailabilityReason(): ?string
+    {
+        if ($this->isAvailable) {
+            return null;
+        }
+
+        if ($this->hasEnded) {
+            return 'This poll has ended and is no longer accepting votes.';
+        }
+
+        if (!$this->hasStarted) {
+            return 'This poll is not open yet.';
+        }
+
+        return 'This poll is currently inactive and not accepting votes.';
+    }
 }

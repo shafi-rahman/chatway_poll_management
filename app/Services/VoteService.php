@@ -4,24 +4,16 @@ namespace App\Services;
 
 use App\Domain\Poll\PollAvailability;
 use App\Events\PollVoteUpdated;
+use App\Jobs\RecordVoteHistory;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\Vote;
-use App\Models\VoteHistory;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class VoteService
 {
-    public function hasAlreadyVoted(Poll $poll, string $cookieToken): bool
-    {
-        return Vote::query()
-            ->where('poll_id', $poll->id)
-            ->where('session_token', $cookieToken)
-            ->exists();
-    }
-
     public function getPollData(Poll $poll, string $cookieToken): array
     {
         $poll->load(['options', 'user']);
@@ -46,27 +38,50 @@ class VoteService
 
     public function submitVote(Poll $poll, int $optionId, string $ipAddress, string $cookieToken): array|false|null
     {
-        $selectedOption = $poll->options()
-            ->where('id', $optionId)
-            ->where('is_active', true)
-            ->first();
+        $poll->loadMissing('options');
 
-        if (!$selectedOption) {
+        $selectedOption = $poll->options->firstWhere('id', $optionId);
+
+        if (!$selectedOption || !$selectedOption->is_active) {
             return null;
         }
 
-        $existingVote = Vote::where('poll_id', $poll->id)
-            ->where('session_token', $cookieToken)
-            ->first();
-
-        $isUpdate = $existingVote !== null;
-
         try {
-            if ($isUpdate) {
-                $this->updateVote($poll, $existingVote, $selectedOption, $ipAddress, $cookieToken);
-            } else {
-                $this->castVote($poll, $selectedOption, $ipAddress, $cookieToken);
-            }
+
+            [$isUpdate, $voteId, $oldOptionId] = DB::transaction(function () use ($poll, $selectedOption, $ipAddress, $cookieToken) {
+
+                $existingVote = Vote::where('poll_id', $poll->id)
+                    ->where('session_token', $cookieToken)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existingVote !== null) {
+                    $oldOptionId = $existingVote->poll_option_id;
+
+                    if ($oldOptionId === $selectedOption->id) {
+                        return [true, $existingVote->id, null];
+                    }
+
+                    $existingVote->update(['poll_option_id' => $selectedOption->id]);
+                    PollOption::where('id', $oldOptionId)->decrement('vote_count');
+                    PollOption::where('id', $selectedOption->id)->increment('vote_count');
+
+                    return [true, $existingVote->id, $oldOptionId];
+                }
+
+                $vote = Vote::create([
+                    'poll_id'        => $poll->id,
+                    'poll_option_id' => $selectedOption->id,
+                    'ip_address'     => $ipAddress,
+                    'session_token'  => $cookieToken,
+                ]);
+
+                Poll::where('id', $poll->id)->increment('total_votes');
+                PollOption::where('id', $selectedOption->id)->increment('vote_count');
+
+                return [false, $vote->id, null];
+            });
+
         } catch (QueryException $e) {
             if (($e->errorInfo[1] ?? null) === 1062) {
                 Log::warning('Duplicate vote attempt blocked at DB level.', [
@@ -92,7 +107,27 @@ class VoteService
             throw $e;
         }
 
-        $poll->refresh()->load('options');
+        if (!$isUpdate || $oldOptionId !== null) {
+            RecordVoteHistory::dispatch(
+                $voteId,
+                $poll->id,
+                $oldOptionId,
+                $selectedOption->id,
+                $ipAddress,
+                $cookieToken,
+            );
+        }
+
+        if (!$isUpdate) {
+            $poll->total_votes    += 1;
+            $selectedOption->vote_count += 1;
+        } elseif ($oldOptionId !== null) {
+            $oldOption = $poll->options->firstWhere('id', $oldOptionId);
+            if ($oldOption) {
+                $oldOption->vote_count -= 1;
+            }
+            $selectedOption->vote_count += 1;
+        }
 
         $resultRows = $poll->resultRows()->values()->all();
         $totalVotes = $poll->totalVotesCount();
@@ -101,62 +136,13 @@ class VoteService
             broadcast(new PollVoteUpdated($poll, $resultRows, $totalVotes));
         } catch (\Throwable $e) {
             Log::warning('Broadcast failed.', [
-                'poll_id'  => $poll->id,
+                'poll_id'   => $poll->id,
                 'poll_uuid' => $poll->uuid,
                 'option_id' => $optionId,
-                'error'    => $e->getMessage(),
+                'error'     => $e->getMessage(),
             ]);
         }
 
         return compact('resultRows', 'totalVotes', 'isUpdate');
-    }
-
-    private function castVote(Poll $poll, PollOption $option, string $ipAddress, string $cookieToken): void
-    {
-        DB::transaction(function () use ($poll, $option, $ipAddress, $cookieToken): void {
-            $vote = Vote::create([
-                'poll_id'        => $poll->id,
-                'poll_option_id' => $option->id,
-                'ip_address'     => $ipAddress,
-                'session_token'  => $cookieToken,
-            ]);
-
-            Poll::where('id', $poll->id)->increment('total_votes');
-            PollOption::where('id', $option->id)->increment('vote_count');
-
-            VoteHistory::create([
-                'vote_id'        => $vote->id,
-                'poll_id'        => $poll->id,
-                'from_option_id' => null,
-                'to_option_id'   => $option->id,
-                'ip_address'     => $ipAddress,
-                'session_token'  => $cookieToken,
-            ]);
-        });
-    }
-
-    private function updateVote(Poll $poll, Vote $existingVote, PollOption $newOption, string $ipAddress, string $cookieToken): void
-    {
-        DB::transaction(function () use ($poll, $existingVote, $newOption, $ipAddress, $cookieToken): void {
-            $oldOptionId = $existingVote->poll_option_id;
-
-            if ($oldOptionId === $newOption->id) {
-                return;
-            }
-
-            VoteHistory::create([
-                'vote_id'        => $existingVote->id,
-                'poll_id'        => $poll->id,
-                'from_option_id' => $oldOptionId,
-                'to_option_id'   => $newOption->id,
-                'ip_address'     => $ipAddress,
-                'session_token'  => $cookieToken,
-            ]);
-
-            $existingVote->update(['poll_option_id' => $newOption->id]);
-
-            PollOption::where('id', $oldOptionId)->decrement('vote_count');
-            PollOption::where('id', $newOption->id)->increment('vote_count');
-        });
     }
 }
