@@ -23,7 +23,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('votes', function (Blueprint $table) {
-            $table->dropUnique('votes_poll_ip_unique');
+            $indexes = collect(\DB::select("SHOW INDEX FROM votes WHERE Key_name = 'votes_poll_ip_unique'"));
+            if ($indexes->isNotEmpty()) {
+                $table->dropUnique('votes_poll_ip_unique');
+            }
             $table->dropUnique('votes_poll_session_unique');
         });
     }

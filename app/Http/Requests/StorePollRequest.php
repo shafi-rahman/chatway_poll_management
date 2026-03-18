@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class StorePollRequest extends FormRequest
 {
@@ -16,7 +17,10 @@ class StorePollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'question'  => ['required', 'string', 'max:255'],
+            'question'  => [
+                'required', 'string', 'max:255',
+                Rule::unique('polls', 'question')->where('user_id', $this->user()->id),
+            ],
             'is_active' => ['required', 'boolean'],
             'starts_at' => ['nullable', 'date', 'required_if:is_active,1'],
             'ends_at'   => ['nullable', 'date', 'after:starts_at', 'required_if:is_active,1'],
@@ -24,6 +28,15 @@ class StorePollRequest extends FormRequest
                 'required',
                 'array',
                 function ($attribute, $value, $fail) {
+                    $texts = collect($value)
+                        ->map(fn ($t) => strtolower(trim(is_string($t) ? $t : '')))
+                        ->filter(fn ($t) => $t !== '');
+
+                    if ($texts->count() > $texts->unique()->count()) {
+                        $fail('Poll options must be unique (case-insensitive).');
+                        return;
+                    }
+
                     if ($this->boolean('is_active') && $this->cleanOptions()->count() < 2) {
                         $fail('Please provide at least two valid poll options.');
                     }
@@ -49,6 +62,7 @@ class StorePollRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'question.unique'       => 'You already have a poll with this question.',
             'starts_at.required_if' => 'An active poll must have a start date.',
             'ends_at.required_if'   => 'An active poll must have an end date.',
         ];

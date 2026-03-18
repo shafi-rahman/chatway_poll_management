@@ -31,10 +31,16 @@ final class PollData
         self::assertActivePollHasDates($isActive, $startsAt, $endsAt);
         self::assertDateRange($startsAt, $endsAt);
 
-        $options = collect($validated['options'] ?? [])
+        $rawTexts = collect($validated['options'] ?? [])
             ->map(fn ($text) => is_string($text) ? trim($text) : '')
-            ->filter(fn ($text) => $text !== '')
-            ->unique()
+            ->filter(fn ($text) => $text !== '');
+
+        $lowerTexts = $rawTexts->map(fn ($t) => strtolower($t));
+        if ($lowerTexts->count() > $lowerTexts->unique()->count()) {
+            throw new PollDomainException('Poll options must be unique (case-insensitive).', 'options');
+        }
+
+        $options = $rawTexts
             ->values()
             ->map(fn (string $text) => new PollOptionData(text: $text, isActive: true))
             ->all();
@@ -77,6 +83,11 @@ final class PollData
             ))
             ->values()
             ->all();
+
+        $lowerTexts = array_map(fn (PollOptionData $o) => strtolower($o->text), $options);
+        if (count($lowerTexts) !== count(array_unique($lowerTexts))) {
+            throw new PollDomainException('Poll options must be unique (case-insensitive).', 'options');
+        }
 
         if ($isActive && count($options) < 2) {
             throw new PollDomainException('Please provide at least two valid poll options.', 'options');

@@ -15,8 +15,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('votes', function (Blueprint $table) {
-            $table->unique(['poll_id', 'ip_address'], 'votes_poll_ip_unique');
-        });
+        //
     }
 };

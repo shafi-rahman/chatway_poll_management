@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class UpdatePollRequest extends FormRequest
 {
@@ -28,6 +29,7 @@ class UpdatePollRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'question.unique'       => 'You already have a poll with this question.',
             'starts_at.required_if' => 'An active poll must have a start date.',
             'ends_at.required_if'   => 'An active poll must have an end date.',
         ];
@@ -36,7 +38,12 @@ class UpdatePollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'question'  => ['required', 'string', 'max:255'],
+            'question'  => [
+                'required', 'string', 'max:255',
+                Rule::unique('polls', 'question')
+                    ->where('user_id', $this->user()->id)
+                    ->ignore($this->route('poll')),
+            ],
             'is_active' => ['required', 'boolean'],
             'starts_at' => ['nullable', 'date', 'required_if:is_active,1'],
             'ends_at'   => ['nullable', 'date', 'after:starts_at', 'required_if:is_active,1'],
@@ -44,6 +51,15 @@ class UpdatePollRequest extends FormRequest
                 function ($attribute, $value, $fail) {
 
                     $options = collect($value);
+
+                    $texts = $options
+                        ->map(fn ($o) => strtolower(trim($o['text'] ?? '')))
+                        ->filter(fn ($t) => $t !== '');
+
+                    if ($texts->count() > $texts->unique()->count()) {
+                        $fail('Poll options must be unique (case-insensitive).');
+                        return;
+                    }
 
                     if ($this->boolean('is_active')) {
                         $valid = $options->filter(fn ($o) => filled($o['text'] ?? null))->count();
