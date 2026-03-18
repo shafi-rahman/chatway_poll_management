@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Poll\PollAvailability;
 use App\Http\Requests\VoteRequest;
 use App\Models\Poll;
 use App\Services\VoteService;
@@ -34,17 +35,17 @@ class PublicPollController extends Controller
 
     public function vote(VoteRequest $request, Poll $poll): RedirectResponse|JsonResponse
     {
-        [$hasStarted, $hasEnded] = $this->voteService->getPollAvailability($poll);
+        $availability = PollAvailability::for($poll);
 
         if (!$poll->is_active) {
             return $this->voteErrorResponse($request, $poll, 'This poll is currently inactive and not accepting votes.');
         }
 
-        if (!$hasStarted) {
+        if (!$availability->hasStarted) {
             return $this->voteErrorResponse($request, $poll, 'This poll is not open yet.');
         }
 
-        if ($hasEnded) {
+        if ($availability->hasEnded) {
             return $this->voteErrorResponse($request, $poll, 'This poll has ended and is no longer accepting votes.');
         }
 

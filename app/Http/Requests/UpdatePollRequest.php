@@ -3,12 +3,26 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 
 class UpdatePollRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    public function withValidator($validator): void
+    {
+        if (! $this->boolean('is_active')) {
+            return;
+        }
+
+        $validator->after(function ($validator) {
+            if ($this->filled('ends_at') && Carbon::parse($this->input('ends_at'))->isPast()) {
+                $validator->errors()->add('ends_at', 'The end date must be in the future for an active poll.');
+            }
+        });
     }
 
     public function messages(): array

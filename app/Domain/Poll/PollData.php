@@ -112,6 +112,10 @@ final class PollData
         if ($endsAt === null) {
             throw new PollDomainException('An active poll must have an end date.', 'ends_at');
         }
+
+        if ($endsAt->isPast()) {
+            throw new PollDomainException('The end date must be in the future for an active poll.', 'ends_at');
+        }
     }
 
     private static function assertDateRange(?Carbon $startsAt, ?Carbon $endsAt): void

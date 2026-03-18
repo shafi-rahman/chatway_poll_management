@@ -2,28 +2,18 @@
 
 namespace App\Services;
 
+use App\Domain\Poll\PollAvailability;
 use App\Events\PollVoteUpdated;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\Vote;
 use App\Models\VoteHistory;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class VoteService
 {
-    public function getPollAvailability(Poll $poll): array
-    {
-        $now = Carbon::now();
-        $hasStarted           = is_null($poll->starts_at) || $poll->starts_at->lte($now);
-        $hasEnded             = !is_null($poll->ends_at) && $poll->ends_at->lt($now);
-        $isAvailableForVoting = $poll->is_active && $hasStarted && !$hasEnded;
-
-        return [$hasStarted, $hasEnded, $isAvailableForVoting];
-    }
-
     public function hasAlreadyVoted(Poll $poll, string $cookieToken): bool
     {
         return Vote::query()
@@ -36,25 +26,24 @@ class VoteService
     {
         $poll->load(['options', 'user']);
 
-        [$hasStarted, $hasEnded, $isAvailableForVoting] = $this->getPollAvailability($poll);
+        $availability = PollAvailability::for($poll);
 
         $currentVote = Vote::where('poll_id', $poll->id)
             ->where('session_token', $cookieToken)
             ->first();
 
         return [
-            'poll'                => $poll,
-            'hasStarted'          => $hasStarted,
-            'hasEnded'            => $hasEnded,
-            'isAvailableForVoting' => $isAvailableForVoting,
-            'hasAlreadyVoted'     => $currentVote !== null,
-            'currentVoteOptionId' => $currentVote?->poll_option_id,
-            'resultRows'          => $poll->resultRows(),
-            'totalVotes'          => $poll->totalVotesCount(),
+            'poll'                 => $poll,
+            'hasStarted'           => $availability->hasStarted,
+            'hasEnded'             => $availability->hasEnded,
+            'isAvailableForVoting' => $availability->isAvailable,
+            'hasAlreadyVoted'      => $currentVote !== null,
+            'currentVoteOptionId'  => $currentVote?->poll_option_id,
+            'resultRows'           => $poll->resultRows(),
+            'totalVotes'           => $poll->totalVotesCount(),
         ];
     }
 
-    // Returns ['resultRows', 'totalVotes', 'isUpdate'], false on duplicate (1062), null if option invalid. Throws on other DB errors.
     public function submitVote(Poll $poll, int $optionId, string $ipAddress, string $cookieToken): array|false|null
     {
         $selectedOption = $poll->options()
