@@ -17,18 +17,26 @@ class StorePollRequest extends FormRequest
         return [
             'question'  => ['required', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at'   => ['nullable', 'date', 'after:starts_at'],
+            'starts_at' => ['nullable', 'date', 'required_if:is_active,1'],
+            'ends_at'   => ['nullable', 'date', 'after:starts_at', 'required_if:is_active,1'],
             'options'   => [
                 'required',
                 'array',
                 function ($attribute, $value, $fail) {
-                    if ($this->cleanOptions()->count() < 2) {
+                    if ($this->boolean('is_active') && $this->cleanOptions()->count() < 2) {
                         $fail('Please provide at least two valid poll options.');
                     }
                 },
             ],
             'options.*' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'starts_at.required_if' => 'An active poll must have a start date.',
+            'ends_at.required_if'   => 'An active poll must have an end date.',
         ];
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Poll\PollData;
+use App\Exceptions\PollDomainException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePollRequest;
 use App\Http\Requests\UpdatePollRequest;
@@ -29,7 +31,13 @@ class PollController extends Controller
 
     public function store(StorePollRequest $request): RedirectResponse
     {
-        $this->pollService->createPoll($request->user(), $request);
+        try {
+            $data = PollData::forCreate($request->validated());
+        } catch (PollDomainException $e) {
+            return back()->withErrors([$e->field => $e->getMessage()])->withInput();
+        }
+
+        $this->pollService->createPoll($request->user(), $data);
 
         return redirect()
             ->route('admin.polls.index')
@@ -53,7 +61,13 @@ class PollController extends Controller
             abort(403, 'You are not authorized to update this poll.');
         }
 
-        $this->pollService->updatePoll($poll, $request);
+        try {
+            $data = PollData::forUpdate($request->validated());
+        } catch (PollDomainException $e) {
+            return back()->withErrors([$e->field => $e->getMessage()])->withInput();
+        }
+
+        $this->pollService->updatePoll($poll, $data);
 
         return redirect()
             ->route('admin.polls.index')

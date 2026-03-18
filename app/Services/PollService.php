@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Http\Requests\StorePollRequest;
-use App\Http\Requests\UpdatePollRequest;
+use App\Domain\Poll\PollData;
+use App\Domain\Poll\PollOptionData;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
@@ -53,22 +53,22 @@ class PollService
         ];
     }
 
-    public function createPoll(User $user, StorePollRequest $request): Poll
+    public function createPoll(User $user, PollData $data): Poll
     {
-        return DB::transaction(function () use ($user, $request): Poll {
+        return DB::transaction(function () use ($user, $data): Poll {
             $poll = Poll::create([
                 'user_id'   => $user->id,
-                'question'  => trim($request->input('question')),
-                'is_active' => (bool) $request->input('is_active'),
-                'starts_at' => $request->input('starts_at'),
-                'ends_at'   => $request->input('ends_at'),
+                'question'  => $data->question,
+                'is_active' => $data->isActive,
+                'starts_at' => $data->startsAt,
+                'ends_at'   => $data->endsAt,
             ]);
 
             $poll->options()->createMany(
-                $request->cleanOptions()->map(fn ($option, $index) => [
-                    'option_text' => $option,
+                collect($data->options)->map(fn (PollOptionData $option, int $index) => [
+                    'option_text' => $option->text,
                     'sort_order'  => $index + 1,
-                    'vote_count' => 0,
+                    'vote_count'  => 0,
                 ])->all()
             );
 
@@ -76,23 +76,21 @@ class PollService
         });
     }
 
-    public function updatePoll(Poll $poll, UpdatePollRequest $request): void
+    public function updatePoll(Poll $poll, PollData $data): void
     {
-        DB::transaction(function () use ($poll, $request): void {
+        DB::transaction(function () use ($poll, $data): void {
             $poll->update([
-                'question'  => trim($request->input('question')),
-                'is_active' => (bool) $request->input('is_active'),
-                'starts_at' => $request->input('starts_at'),
-                'ends_at'   => $request->input('ends_at'),
+                'question'  => $data->question,
+                'is_active' => $data->isActive,
+                'starts_at' => $data->startsAt,
+                'ends_at'   => $data->endsAt,
             ]);
 
-            $submittedOptions = collect($request->input('options', []));
             $existingOptionIds = $poll->options->pluck('id')->all();
 
-            $keptIds = $submittedOptions
-                ->filter(fn ($o) => !empty($o['id']))
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
+            $keptIds = collect($data->options)
+                ->filter(fn (PollOptionData $o) => $o->id !== null)
+                ->map(fn (PollOptionData $o) => $o->id)
                 ->all();
 
             $poll->options()
@@ -102,27 +100,18 @@ class PollService
 
             $sortOrder = 1;
 
-            foreach ($submittedOptions as $optionData) {
-                $text = trim($optionData['text'] ?? '');
-
-                if ($text === '') {
-                    continue;
-                }
-
-                $id       = !empty($optionData['id']) ? (int) $optionData['id'] : null;
-                $isActive = isset($optionData['is_active']) && (bool) $optionData['is_active'];
-
-                if ($id && in_array($id, $existingOptionIds)) {
-                    PollOption::where('id', $id)
+            foreach ($data->options as $optionData) {
+                if ($optionData->id !== null && in_array($optionData->id, $existingOptionIds)) {
+                    PollOption::where('id', $optionData->id)
                         ->where('poll_id', $poll->id)
                         ->update([
-                            'option_text' => $text,
-                            'is_active'   => $isActive,
+                            'option_text' => $optionData->text,
+                            'is_active'   => $optionData->isActive,
                             'sort_order'  => $sortOrder,
                         ]);
                 } else {
                     $poll->options()->create([
-                        'option_text' => $text,
+                        'option_text' => $optionData->text,
                         'is_active'   => true,
                         'sort_order'  => $sortOrder,
                         'vote_count'  => 0,
