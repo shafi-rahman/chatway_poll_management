@@ -26,11 +26,15 @@ class PollController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Poll::class);
+
         return view('admin.polls.create');
     }
 
     public function store(StorePollRequest $request): RedirectResponse
     {
+        $this->authorize('create', Poll::class);
+
         try {
             $data = PollData::forCreate($request->validated());
         } catch (PollDomainException $e) {
@@ -44,11 +48,9 @@ class PollController extends Controller
             ->with('success', 'Poll created successfully.');
     }
 
-    public function edit(Request $request, Poll $poll): View
+    public function edit(Poll $poll): View
     {
-        if ($poll->user_id !== $request->user()->id) {
-            abort(403, 'You are not authorized to edit this poll.');
-        }
+        $this->authorize('update', $poll);
 
         return view('admin.polls.edit', [
             'poll' => $this->pollService->getPollForEdit($poll),
@@ -57,9 +59,7 @@ class PollController extends Controller
 
     public function update(UpdatePollRequest $request, Poll $poll): RedirectResponse
     {
-        if ($poll->user_id !== $request->user()->id) {
-            abort(403, 'You are not authorized to update this poll.');
-        }
+        $this->authorize('update', $poll);
 
         try {
             $data = PollData::forUpdate($request->validated());
@@ -74,20 +74,16 @@ class PollController extends Controller
             ->with('success', 'Poll updated successfully.');
     }
 
-    public function show(Request $request, Poll $poll): View
+    public function show(Poll $poll): View
     {
-        if ($poll->user_id !== $request->user()->id) {
-            abort(403, 'You are not authorized to view this poll.');
-        }
+        $this->authorize('view', $poll);
 
         return view('admin.polls.show', $this->pollService->getPollWithDetails($poll));
     }
 
-    public function results(Request $request, Poll $poll): RedirectResponse
+    public function results(Poll $poll): RedirectResponse
     {
-        if ($poll->user_id !== $request->user()->id) {
-            abort(403, 'You are not authorized to view these results.');
-        }
+        $this->authorize('view', $poll);
 
         return redirect()->route('admin.polls.show', $poll);
     }
