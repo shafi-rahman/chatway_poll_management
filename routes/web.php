@@ -33,11 +33,4 @@ Route::get('/polls/{poll}', [PublicPollController::class, 'show'])->middleware('
 Route::post('/polls/{poll}/vote', [PublicPollController::class, 'vote'])->middleware('throttle:5,1')->name('polls.vote');
 
 
-// test redis
-use Illuminate\Support\Facades\Redis;
-Route::get('/redis-test', function () {
-    Redis::set('name', 'Rahman');
-    return Redis::get('name');
-});
-
 require __DIR__.'/auth.php';

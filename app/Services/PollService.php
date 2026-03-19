@@ -8,7 +8,9 @@ use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
 use App\Models\VoteHistory;
+use App\Services\VoteService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class PollService
@@ -121,5 +123,7 @@ class PollService
                 $sortOrder++;
             }
         });
+
+        Cache::forget(VoteService::pollCacheKey($poll));
     }
 }

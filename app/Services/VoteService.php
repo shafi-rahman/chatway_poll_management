@@ -9,14 +9,27 @@ use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\Vote;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class VoteService
 {
+    public static function pollCacheKey(Poll $poll): string
+    {
+        return "poll.relations.{$poll->uuid}";
+    }
+
     public function getPollData(Poll $poll, string $cookieToken): array
     {
-        $poll->load(['options', 'user']);
+        $relations = Cache::remember(self::pollCacheKey($poll), now()->addHours(2), function () use ($poll) {
+            $poll->load(['options', 'user']);
+
+            return ['options' => $poll->options, 'user' => $poll->user];
+        });
+
+        $poll->setRelation('options', $relations['options']);
+        $poll->setRelation('user', $relations['user']);
 
         $availability = PollAvailability::for($poll);
 
