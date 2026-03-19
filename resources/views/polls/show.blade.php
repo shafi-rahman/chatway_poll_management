@@ -126,7 +126,7 @@
                     </div>
 
                     <div id="public-results-breakdown" class="space-y-4">
-                        @foreach ($resultRows as $row)
+                        @foreach ($resultRows->where('is_active', true) as $row)
                             <div class="public-result-row" data-option-id="{{ $row['id'] }}">
                                 <div class="mb-2 flex items-center justify-between gap-4">
                                     <div class="text-sm font-medium text-gray-800">
