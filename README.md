@@ -242,3 +242,18 @@ Each vote triggers a broadcast event that updates:
 * the public poll results page
 
 in real time without requiring a page refresh.
+
+---
+
+## 👨‍💻 Author
+
+**Shafi Ur Rahman**  
+Senior PHP / Laravel Developer  
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Shafi%20Ur%20Rahman-blue?logo=linkedin&style=flat-square)](https://www.linkedin.com/in/shafirahman-com/)
+
+---
+
+## 📄 License
+
+MIT — free to use, modify, and distribute.
